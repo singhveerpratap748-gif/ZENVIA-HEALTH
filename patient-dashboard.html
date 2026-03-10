@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZENVIA Health — Patient Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --teal: #0A6E6E; --teal-light: #0d9090; --teal-dark: #064f4f;
+  --teal-pale: #e6f4f4; --gold: #C9A84C; --gold-pale: #fdf6e3;
+  --dark: #060e0e; --dark2: #0a1a1a; --bg: #f0f7f7;
+  --text: #1a2e2e; --text-muted: #5a8080; --white: #fff; --border: #d4eaea;
+  --sidebar-w: 240px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Nunito',sans-serif; background:var(--bg); color:var(--text); display:flex; min-height:100vh; }
+
+/* SIDEBAR */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--dark2);
+  min-height: 100vh;
+  position: fixed;
+  top:0; left:0; bottom:0;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  z-index: 100;
+  transition: transform 0.3s;
+}
+
+.sidebar-logo {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.sidebar-logo h2 {
+  font-family:'Sora',sans-serif;
+  font-size:1.1rem; font-weight:800;
+  color: white; letter-spacing:-0.5px;
+}
+
+.sidebar-logo h2 span { color: var(--teal-light); }
+.sidebar-logo p { font-size:0.65rem; color:rgba(255,255,255,0.35); font-weight:600; letter-spacing:1.5px; text-transform:uppercase; margin-top:2px; }
+
+/* Family switcher */
+.family-switcher {
+  padding: 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.family-switcher-label { font-size:0.62rem; color:rgba(255,255,255,0.35); font-weight:700; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:10px; }
+
+.family-members { display:flex; gap:8px; flex-wrap:wrap; }
+
+.family-avatar {
+  width:36px; height:36px; border-radius:10px;
+  background:rgba(255,255,255,0.06);
+  border:2px solid transparent;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1rem; cursor:pointer;
+  transition:all 0.2s;
+  position:relative;
+}
+
+.family-avatar.active { border-color:var(--teal-light); background:rgba(10,110,110,0.2); }
+.family-avatar:hover { border-color:rgba(255,255,255,0.2); }
+
+.family-avatar .fa-score {
+  position:absolute; bottom:-4px; right:-4px;
+  background:var(--teal); color:white;
+  font-size:0.5rem; font-weight:800;
+  padding:1px 4px; border-radius:4px;
+  font-family:'Sora',sans-serif;
+}
+
+/* Nav */
+.sidebar-nav { flex:1; padding:16px 12px; overflow-y:auto; }
+
+.nav-section-label { font-size:0.6rem; color:rgba(255,255,255,0.3); font-weight:700; letter-spacing:2px; text-transform:uppercase; padding:0 8px; margin:16px 0 8px; }
+
+.nav-item {
+  display:flex; align-items:center; gap:12px;
+  padding:10px 12px; border-radius:12px;
+  color:rgba(255,255,255,0.5); font-size:0.85rem; font-weight:600;
+  cursor:pointer; transition:all 0.2s; margin-bottom:2px;
+  text-decoration:none;
+}
+
+.nav-item:hover { background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.8); }
+.nav-item.active { background:rgba(10,110,110,0.25); color:var(--teal-light); }
+.nav-item .nav-icon { font-size:1rem; width:20px; text-align:center; }
+
+.nav-badge {
+  margin-left:auto; background:var(--teal); color:white;
+  font-size:0.6rem; font-weight:800; padding:2px 7px; border-radius:100px;
+}
+
+.sidebar-bottom { padding:16px; border-top:1px solid rgba(255,255,255,0.06); }
+.user-profile { display:flex; align-items:center; gap:10px; }
+.user-avatar { width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; font-size:1rem; }
+.user-name { font-size:0.82rem; font-weight:700; color:white; }
+.user-email { font-size:0.68rem; color:rgba(255,255,255,0.35); }
+.logout-btn { margin-left:auto; font-size:0.75rem; color:rgba(255,255,255,0.3); cursor:pointer; transition:color 0.2s; text-decoration:none; }
+.logout-btn:hover { color:rgba(255,100,100,0.8); }
+
+/* MAIN */
+.main { margin-left:var(--sidebar-w); flex:1; padding:28px; min-height:100vh; }
+
+/* Top bar */
+.topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:16px; }
+.topbar-left h1 { font-family:'Sora',sans-serif; font-size:1.4rem; font-weight:800; color:var(--dark); letter-spacing:-0.5px; }
+.topbar-left p { font-size:0.82rem; color:var(--text-muted); margin-top:2px; }
+.topbar-right { display:flex; align-items:center; gap:12px; }
+
+.notif-btn {
+  width:40px; height:40px; border-radius:12px;
+  background:var(--white); border:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; font-size:1rem; position:relative;
+  transition:all 0.2s;
+}
+.notif-btn:hover { border-color:var(--teal); }
+.notif-dot { position:absolute; top:6px; right:6px; width:8px; height:8px; background:#ef4444; border-radius:50%; border:2px solid var(--bg); }
+
+.premium-pill {
+  background:var(--gold); color:var(--dark);
+  font-size:0.72rem; font-weight:800; letter-spacing:0.5px;
+  padding:6px 14px; border-radius:100px; cursor:pointer;
+  transition:all 0.2s;
+}
+.premium-pill:hover { background:var(--gold-light); }
+
+/* Cards grid */
+.cards-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:20px; margin-bottom:28px; }
+
+.stat-card {
+  background:var(--white); border:1px solid var(--border);
+  border-radius:20px; padding:22px;
+  transition:all 0.3s;
+}
+.stat-card:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(10,110,110,0.1); }
+
+.stat-card.teal { background:var(--teal); border-color:var(--teal); }
+.stat-card.gold { background:var(--gold); border-color:var(--gold); }
+
+.stat-label { font-size:0.68rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px; }
+.stat-card.teal .stat-label { color:rgba(255,255,255,0.7); }
+.stat-card.gold .stat-label { color:rgba(0,0,0,0.6); }
+
+.stat-value { font-family:'Sora',sans-serif; font-size:2rem; font-weight:800; color:var(--dark); line-height:1; }
+.stat-card.teal .stat-value { color:white; }
+.stat-card.gold .stat-value { color:var(--dark); }
+
+.stat-change { font-size:0.72rem; color:#22c55e; font-weight:600; margin-top:6px; }
+.stat-change.down { color:#ef4444; }
+.stat-card.teal .stat-change { color:rgba(255,255,255,0.7); }
+
+/* Score ring */
+.score-section {
+  display:grid; grid-template-columns:1fr 2fr; gap:20px; margin-bottom:28px;
+}
+
+.score-card {
+  background:var(--white); border:1px solid var(--border); border-radius:20px; padding:28px;
+  display:flex; flex-direction:column; align-items:center; text-align:center;
+}
+
+.score-ring-big {
+  width:140px; height:140px; border-radius:50%;
+  background:conic-gradient(var(--teal-light) 0% 78%, var(--teal-pale) 78% 100%);
+  display:flex; align-items:center; justify-content:center;
+  margin: 0 auto 16px; position:relative;
+}
+
+.score-ring-big::before { content:''; position:absolute; inset:14px; border-radius:50%; background:white; }
+
+.score-number {
+  position:relative; z-index:1;
+  font-family:'Sora',sans-serif; font-size:2.2rem; font-weight:900; color:var(--teal-dark);
+}
+
+.score-title { font-family:'Sora',sans-serif; font-size:0.95rem; font-weight:700; color:var(--dark); margin-bottom:4px; }
+.score-desc { font-size:0.78rem; color:var(--text-muted); margin-bottom:20px; }
+
+.score-factors { width:100%; }
+.factor { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.factor-name { font-size:0.75rem; color:var(--text-muted); }
+.factor-bar-wrap { flex:1; margin:0 10px; height:6px; background:var(--teal-pale); border-radius:3px; overflow:hidden; }
+.factor-bar { height:100%; border-radius:3px; background:var(--teal); transition:width 1s ease; }
+.factor-val { font-size:0.75rem; font-weight:700; color:var(--teal); }
+
+/* AI Insights */
+.ai-insights {
+  background:var(--white); border:1px solid var(--border); border-radius:20px; padding:24px;
+  overflow-y:auto;
+}
+
+.ai-insights-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+.ai-insights-header h3 { font-family:'Sora',sans-serif; font-size:0.95rem; font-weight:700; color:var(--dark); }
+
+.ai-badge {
+  background:linear-gradient(135deg,var(--teal-dark),var(--teal));
+  color:white; font-size:0.62rem; font-weight:800; letter-spacing:1px;
+  text-transform:uppercase; padding:4px 10px; border-radius:100px;
+}
+
+.insight-item {
+  display:flex; gap:12px; padding:12px 0;
+  border-bottom:1px solid var(--border);
+}
+.insight-item:last-child { border-bottom:none; }
+
+.insight-icon {
+  width:36px; height:36px; border-radius:10px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; font-size:0.9rem;
+}
+
+.insight-icon.warn { background:#fef3c7; }
+.insight-icon.good { background:#dcfce7; }
+.insight-icon.info { background:var(--teal-pale); }
+
+.insight-text h4 { font-size:0.82rem; font-weight:700; color:var(--dark); margin-bottom:2px; }
+.insight-text p { font-size:0.75rem; color:var(--text-muted); line-height:1.5; }
+
+/* Bottom grid */
+.bottom-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; margin-bottom:28px; }
+
+.panel-card { background:var(--white); border:1px solid var(--border); border-radius:20px; padding:24px; }
+.panel-card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.panel-card-header h3 { font-family:'Sora',sans-serif; font-size:0.88rem; font-weight:700; color:var(--dark); }
+.view-all { font-size:0.72rem; color:var(--teal); font-weight:700; cursor:pointer; text-decoration:none; }
+
+/* Appointments */
+.appt-item { display:flex; gap:12px; margin-bottom:14px; align-items:flex-start; }
+.appt-date {
+  width:44px; min-width:44px; height:44px; border-radius:12px;
+  background:var(--teal-pale); display:flex; flex-direction:column;
+  align-items:center; justify-content:center; text-align:center;
+}
+.appt-date strong { font-family:'Sora',sans-serif; font-size:1rem; font-weight:800; color:var(--teal); line-height:1; }
+.appt-date span { font-size:0.55rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; }
+.appt-info h4 { font-size:0.82rem; font-weight:700; color:var(--dark); }
+.appt-info p { font-size:0.72rem; color:var(--text-muted); }
+.appt-status { margin-left:auto; font-size:0.62rem; font-weight:700; padding:3px 8px; border-radius:100px; }
+.appt-status.confirmed { background:#dcfce7; color:#166534; }
+.appt-status.pending { background:#fef3c7; color:#92400e; }
+
+/* Reports */
+.report-item { display:flex; gap:10px; margin-bottom:12px; align-items:center; }
+.report-icon { width:38px; height:38px; border-radius:10px; background:var(--teal-pale); display:flex; align-items:center; justify-content:center; font-size:0.9rem; flex-shrink:0; }
+.report-info { flex:1; }
+.report-info h4 { font-size:0.8rem; font-weight:700; color:var(--dark); }
+.report-info p { font-size:0.68rem; color:var(--text-muted); }
+.report-status { font-size:0.62rem; font-weight:700; padding:3px 8px; border-radius:100px; background:#dcfce7; color:#166534; flex-shrink:0; }
+
+/* Health Adventure */
+.adventure-card { background:linear-gradient(135deg,var(--teal-dark),var(--teal)); border-radius:20px; padding:24px; color:white; }
+.adventure-card h3 { font-family:'Sora',sans-serif; font-size:0.95rem; font-weight:700; margin-bottom:4px; }
+.adventure-card p { font-size:0.75rem; opacity:0.7; margin-bottom:16px; }
+.avatar-display { text-align:center; font-size:3rem; margin-bottom:12px; }
+.xp-bar-wrap { background:rgba(255,255,255,0.15); border-radius:100px; height:8px; margin-bottom:8px; overflow:hidden; }
+.xp-bar { height:100%; background:var(--gold); border-radius:100px; width:65%; }
+.xp-label { font-size:0.68rem; opacity:0.7; display:flex; justify-content:space-between; }
+.quest-list { margin-top:14px; }
+.quest { display:flex; align-items:center; gap:8px; font-size:0.72rem; margin-bottom:6px; }
+.quest-check { width:16px; height:16px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:0.5rem; flex-shrink:0; }
+.quest-check.done { background:var(--gold); color:var(--dark); }
+.quest-check.todo { background:rgba(255,255,255,0.15); }
+
+/* Quick actions */
+.quick-actions { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:28px; }
+.quick-btn {
+  background:var(--white); border:1px solid var(--border); border-radius:16px;
+  padding:20px 16px; text-align:center; cursor:pointer;
+  transition:all 0.25s; text-decoration:none; display:block;
+}
+.quick-btn:hover { border-color:var(--teal); background:var(--teal-pale); transform:translateY(-2px); }
+.quick-icon { font-size:1.5rem; margin-bottom:8px; }
+.quick-label { font-size:0.75rem; font-weight:700; color:var(--dark); }
+
+/* Mobile */
+.mob-menu-btn { display:none; position:fixed; top:16px; left:16px; z-index:200; background:var(--teal); color:white; border:none; width:40px; height:40px; border-radius:12px; font-size:1.1rem; cursor:pointer; }
+
+@media(max-width:1100px) { .cards-grid { grid-template-columns:repeat(2,1fr); } }
+@media(max-width:900px) {
+  .sidebar { transform:translateX(-100%); }
+  .sidebar.open { transform:translateX(0); }
+  .main { margin-left:0; padding:80px 16px 24px; }
+  .mob-menu-btn { display:flex; align-items:center; justify-content:center; }
+  .score-section { grid-template-columns:1fr; }
+  .bottom-grid { grid-template-columns:1fr; }
+  .quick-actions { grid-template-columns:repeat(2,1fr); }
+}
+@media(max-width:600px) { .cards-grid { grid-template-columns:1fr 1fr; } }
+</style>
+</head>
+<body>
+
+<button class="mob-menu-btn" onclick="toggleSidebar()">☰</button>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <h2>ZENVIA <span>Health</span></h2>
+    <p>Patient Panel</p>
+  </div>
+
+  <div class="family-switcher">
+    <div class="family-switcher-label">Family Members</div>
+    <div class="family-members">
+      <div class="family-avatar active" title="You">👨<span class="fa-score">78</span></div>
+      <div class="family-avatar" title="Papa">👴<span class="fa-score">72</span></div>
+      <div class="family-avatar" title="Mummy">👩<span class="fa-score">85</span></div>
+      <div class="family-avatar" title="Wife">👩‍🦱<span class="fa-score">91</span></div>
+      <div class="family-avatar" title="Beta">👦<span class="fa-score">96</span></div>
+      <div class="family-avatar" style="background:rgba(201,168,76,0.15); border-color:rgba(201,168,76,0.3); font-size:0.8rem; color:rgba(255,255,255,0.4);" title="Add member">+</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Main</div>
+    <a class="nav-item active" href="#">
+      <span class="nav-icon">🏠</span> Dashboard
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">💚</span> Health Score
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">🧬</span> Health Genome
+      <span class="nav-badge">Premium</span>
+    </a>
+
+    <div class="nav-section-label">Health</div>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">📋</span> My Reports
+      <span class="nav-badge">3</span>
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">🧠</span> AI Report Analysis
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">🩺</span> Symptom Checker
+    </a>
+
+    <div class="nav-section-label">Appointments</div>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">📅</span> Book Doctor
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">🔬</span> Book Lab Test
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">💬</span> Messages
+      <span class="nav-badge">2</span>
+    </a>
+
+    <div class="nav-section-label">Premium</div>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">🔐</span> Health Vault
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">🎮</span> Health Adventure
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">👨‍👩‍👧‍👦</span> Family Hub
+    </a>
+  </nav>
+
+  <div class="sidebar-bottom">
+    <div class="user-profile">
+      <div class="user-avatar">👤</div>
+      <div>
+        <div class="user-name">Arjun Sharma</div>
+        <div class="user-email">arjun@email.com</div>
+      </div>
+      <a href="index.html" class="logout-btn">⎋</a>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>Good Morning, Arjun 👋</h1>
+      <p>Tuesday, 10 March 2026 • Lucknow • Your family is healthy today</p>
+    </div>
+    <div class="topbar-right">
+      <div class="notif-btn">🔔<div class="notif-dot"></div></div>
+      <div class="premium-pill">⭐ Upgrade to Premium</div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <a class="quick-btn" href="#">
+      <div class="quick-icon">📅</div>
+      <div class="quick-label">Book Doctor</div>
+    </a>
+    <a class="quick-btn" href="#">
+      <div class="quick-icon">🔬</div>
+      <div class="quick-label">Book Lab Test</div>
+    </a>
+    <a class="quick-btn" href="#">
+      <div class="quick-icon">📤</div>
+      <div class="quick-label">Upload Report</div>
+    </a>
+    <a class="quick-btn" href="#">
+      <div class="quick-icon">🩺</div>
+      <div class="quick-label">Symptom Check</div>
+    </a>
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="cards-grid">
+    <div class="stat-card teal">
+      <div class="stat-label">Health Score</div>
+      <div class="stat-value">78</div>
+      <div class="stat-change">↑ +3 this week</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Appointments</div>
+      <div class="stat-value">2</div>
+      <div class="stat-change">Next: Mar 15</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Reports Analyzed</div>
+      <div class="stat-value">7</div>
+      <div class="stat-change">↑ 2 this month</div>
+    </div>
+    <div class="stat-card gold">
+      <div class="stat-label">Health Gems</div>
+      <div class="stat-value">240</div>
+      <div class="stat-change">↑ +15 today</div>
+    </div>
+  </div>
+
+  <!-- Score + AI Insights -->
+  <div class="score-section">
+    <div class="score-card">
+      <div class="score-ring-big">
+        <div class="score-number">78</div>
+      </div>
+      <div class="score-title">Your Health Score</div>
+      <div class="score-desc">Good — 3 areas to improve</div>
+      <div class="score-factors">
+        <div class="factor">
+          <div class="factor-name">Lab Results</div>
+          <div class="factor-bar-wrap"><div class="factor-bar" style="width:82%"></div></div>
+          <div class="factor-val">82</div>
+        </div>
+        <div class="factor">
+          <div class="factor-name">Lifestyle</div>
+          <div class="factor-bar-wrap"><div class="factor-bar" style="width:70%"></div></div>
+          <div class="factor-val">70</div>
+        </div>
+        <div class="factor">
+          <div class="factor-name">Consultations</div>
+          <div class="factor-bar-wrap"><div class="factor-bar" style="width:90%"></div></div>
+          <div class="factor-val">90</div>
+        </div>
+        <div class="factor">
+          <div class="factor-name">Family History</div>
+          <div class="factor-bar-wrap"><div class="factor-bar" style="width:65%"></div></div>
+          <div class="factor-val">65</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ai-insights">
+      <div class="ai-insights-header">
+        <h3>🤖 AI Health Insights</h3>
+        <div class="ai-badge">Health Genome</div>
+      </div>
+      <div class="insight-item">
+        <div class="insight-icon warn">⚠️</div>
+        <div class="insight-text">
+          <h4>Papa's Cholesterol — Rising Trend</h4>
+          <p>LDL has increased in 3 consecutive tests (Jan, Feb, Mar). Recommend dietary review and consultation with Dr. Sharma before April.</p>
+        </div>
+      </div>
+      <div class="insight-item">
+        <div class="insight-icon good">✅</div>
+        <div class="insight-text">
+          <h4>Your Blood Pressure — Excellent</h4>
+          <p>Consistent readings over 6 months. Your lifestyle changes are working. Keep up the evening walks.</p>
+        </div>
+      </div>
+      <div class="insight-item">
+        <div class="insight-icon info">💡</div>
+        <div class="insight-text">
+          <h4>Vitamin D Deficiency Risk</h4>
+          <p>Based on your family history and lifestyle patterns, you may be at risk. Consider booking a Vitamin D test at SRL Lab this month.</p>
+        </div>
+      </div>
+      <div class="insight-item">
+        <div class="insight-icon good">✅</div>
+        <div class="insight-text">
+          <h4>Wife's Pregnancy Nutrition — On Track</h4>
+          <p>Iron and folic acid levels from last report are within healthy range. Next test recommended in 3 weeks.</p>
+        </div>
+      </div>
+      <div class="insight-item">
+        <div class="insight-icon info">📋</div>
+        <div class="insight-text">
+          <h4>Annual Health Checkup Due</h4>
+          <p>Your last full panel was 11 months ago. Book a comprehensive health checkup — ZENVIA has a curated package at Dr. Lal Pathlabs.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Grid -->
+  <div class="bottom-grid">
+
+    <!-- Appointments -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <h3>📅 Upcoming Appointments</h3>
+        <a href="#" class="view-all">View All</a>
+      </div>
+      <div class="appt-item">
+        <div class="appt-date"><strong>15</strong><span>Mar</span></div>
+        <div class="appt-info">
+          <h4>Dr. Anil Sharma</h4>
+          <p>Cardiology • 10:30 AM • Video Call</p>
+        </div>
+        <div class="appt-status confirmed">Confirmed</div>
+      </div>
+      <div class="appt-item">
+        <div class="appt-date"><strong>22</strong><span>Mar</span></div>
+        <div class="appt-info">
+          <h4>Dr. Priya Gupta</h4>
+          <p>Diabetology • 3:00 PM • In-Clinic</p>
+        </div>
+        <div class="appt-status pending">Pending</div>
+      </div>
+      <div class="appt-item">
+        <div class="appt-date"><strong>01</strong><span>Apr</span></div>
+        <div class="appt-info">
+          <h4>SRL Diagnostics</h4>
+          <p>Full Blood Panel • 7:30 AM • Lab Visit</p>
+        </div>
+        <div class="appt-status confirmed">Confirmed</div>
+      </div>
+    </div>
+
+    <!-- Reports -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <h3>📋 Recent Reports</h3>
+        <a href="#" class="view-all">View All</a>
+      </div>
+      <div class="report-item">
+        <div class="report-icon">🩸</div>
+        <div class="report-info">
+          <h4>Complete Blood Count</h4>
+          <p>Papa • Mar 5, 2026 • SRL Lab</p>
+        </div>
+        <div class="report-status">Analyzed ✓</div>
+      </div>
+      <div class="report-item">
+        <div class="report-icon">🫀</div>
+        <div class="report-info">
+          <h4>Lipid Profile</h4>
+          <p>Papa • Feb 10, 2026 • Dr. Lal</p>
+        </div>
+        <div class="report-status">Analyzed ✓</div>
+      </div>
+      <div class="report-item">
+        <div class="report-icon">🤰</div>
+        <div class="report-info">
+          <h4>Prenatal Panel</h4>
+          <p>Wife • Mar 1, 2026 • City Lab</p>
+        </div>
+        <div class="report-status">Analyzed ✓</div>
+      </div>
+      <div class="report-item">
+        <div class="report-icon">🧪</div>
+        <div class="report-info">
+          <h4>HbA1c — Diabetes Screen</h4>
+          <p>You • Jan 20, 2026 • SRL Lab</p>
+        </div>
+        <div class="report-status">Analyzed ✓</div>
+      </div>
+    </div>
+
+    <!-- Health Adventure -->
+    <div class="adventure-card">
+      <h3>🎮 Health Adventure</h3>
+      <p>Level 8 • Wellness Warrior</p>
+      <div class="avatar-display">🧘‍♂️</div>
+      <div class="xp-bar-wrap"><div class="xp-bar"></div></div>
+      <div class="xp-label"><span>650 XP</span><span>1000 XP to Level 9</span></div>
+      <div class="quest-list">
+        <div class="quest">
+          <div class="quest-check done">✓</div>
+          <span>Upload a lab report</span>
+        </div>
+        <div class="quest">
+          <div class="quest-check done">✓</div>
+          <span>Book a doctor appointment</span>
+        </div>
+        <div class="quest">
+          <div class="quest-check done">✓</div>
+          <span>Log your morning walk</span>
+        </div>
+        <div class="quest">
+          <div class="quest-check todo"></div>
+          <span>Complete health questionnaire</span>
+        </div>
+        <div class="quest">
+          <div class="quest-check todo"></div>
+          <span>Get Papa's checkup booked</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<script>
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// Animate score ring on load
+window.addEventListener('load', () => {
+  document.querySelectorAll('.factor-bar').forEach(bar => {
+    const w = bar.style.width;
+    bar.style.width = '0';
+    setTimeout(() => { bar.style.width = w; }, 300);
+  });
+});
+</script>
+</body>
+</html>
